@@ -1,5 +1,7 @@
 # focuscurvefitter
 
+This package emerged from the 2019 focus project.
+
 Experimental implementation of an alternative way to fit a focus curve in focus sequences.
 
 Currently, focus seuqences at LCO telescopes are modeled via a parabola. The new algorithm implemented
