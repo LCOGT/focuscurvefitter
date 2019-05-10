@@ -44,7 +44,8 @@ python lcofocuscurvefit/curvefit.py --focuslist -2 -1.5 -1 -0.5 -0 0.5 1 1.5 2  
 Installation & testing:
 ==
 Clone git repository, and enter directoy.
-`git clone ....
+```
+git clone ....
 cd ...
 
 python3 -m venv venv
@@ -53,6 +54,7 @@ source venv/bin/activate
 
 pip install -r requirements.txt
 
-pytest`
+pytest
+```
 
 Now you can look at example fits, called focus_?.png
