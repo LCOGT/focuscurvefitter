@@ -39,3 +39,20 @@ E.g.:
 python lcofocuscurvefit/curvefit.py --focuslist -2 -1.5 -1 -0.5 -0 0.5 1 1.5 2  --fwhmlist 3.6 3.57 3.74 4.21 5.34 5.89 7.1 8.26 9.46 --makepng
 {"fitok": true, "fit_seeing": 3.4802276117800797, "fit_focus": -1.5252690391150956, "fit_slope": 2.472104038485136, "fit_rms": 0.11436685187985646}
 </pre>
+
+
+Installation & testing:
+==
+Clone git repository, and enter directoy.
+`git clone ....
+cd ...
+
+python3 -m venv venv
+
+source venv/bin/activate
+
+pip install -r requirements.txt
+
+pytest`
+
+Now you can look at example fits, called focus_?.png
