@@ -7,8 +7,8 @@ from scipy import optimize
 import json
 
 # This describes our model for a focus curve: Seeing and defocus add in quadrature.
-sqrtfit = lambda x, seeing, bestfocus, slope: (seeing ** 2 + (slope * (x - bestfocus)) ** 2) ** 0.5
-polyfit = lambda x, p0, p1, p2: p2 * (x-p1)**2 + p0
+sqrtfit = lambda x, seeing, bestfocus, slope: (seeing ** 2 + (slope * (x - bestfocus)) ** 2) ** 0.6
+polyfit = lambda x, p0, p1, p2: p2 * (x - p1) ** 2 + p0
 
 
 def focus_curve_fit(xdata, ydata, func=sqrtfit, plot=False):
@@ -56,8 +56,9 @@ def parseCommandLine():
     args.fwhmlist = np.asarray(args.fwhmlist)
     return args
 
+
 def makeprettyplot():
-    #TODO: Move all the plotting stuff in here
+    # TODO: Move all the plotting stuff in here
     pass
 
 
