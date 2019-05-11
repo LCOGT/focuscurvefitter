@@ -7,20 +7,20 @@ from scipy import optimize
 import json
 
 # This describes our model for a focus curve: Seeing and defocus add in quadrature.
-sqrtfit = lambda x, seeing, bestfocus, slope: (seeing ** 2 + (slope * (x - bestfocus)) ** 2) ** 0.6
+sqrtfit = lambda x, seeing, bestfocus, slope, tweak: (seeing ** 2 + (slope * (x - bestfocus)) ** 2) ** tweak
 polyfit = lambda x, p0, p1, p2: p2 * (x - p1) ** 2 + p0
 
 
 def focus_curve_fit(xdata, ydata, func=sqrtfit, plot=False):
     # TODO: Verification that we have enough points.
 
-    for iter in range(2):
+    for iter in range(3):
         (paramset, istat) = optimize.curve_fit(func, xdata, ydata)
         # sigma rejection and rms estimate:
         fit = func(xdata, *paramset)
         delta = ydata - fit
         s = np.std(delta)
-        good = (delta < 3 * s)
+        good = (delta < 2 * s) & (ydata < 20)
         xdata = xdata[good]
         ydata = ydata[good]
 
@@ -71,7 +71,7 @@ def main():
         plt.xlabel("FOCUS Demand [mm foc plane]")
         plt.ylabel("FWHM (Pixels")
         plt.xlim([-3.6, 3.6])
-        plt.ylim([0, 20])
+        plt.ylim([0, 30])
 
     focus_curve_fit(args.focuslist, args.fwhmlist, polyfit, plot=args.makepng)
     p, rms = focus_curve_fit(args.focuslist, args.fwhmlist, sqrtfit, plot=args.makepng)
