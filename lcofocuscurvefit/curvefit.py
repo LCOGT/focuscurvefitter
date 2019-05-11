@@ -20,7 +20,7 @@ def focus_curve_fit(xdata, ydata, func=sqrtfit, plot=False):
         fit = func(xdata, *paramset)
         delta = ydata - fit
         s = np.std(delta)
-        good = (delta < 2 * s) & (ydata < 20)
+        good = (delta < 3 * s)
         xdata = xdata[good]
         ydata = ydata[good]
 
@@ -29,7 +29,7 @@ def focus_curve_fit(xdata, ydata, func=sqrtfit, plot=False):
     if plot:
         base = np.arange(-3.6, 3.6, 0.1)
         y = func(base, *paramset)
-        plt.plot(base, y, "--", label="sqrt" if func == sqrtfit else "parabola")
+        plt.plot(base, y, "--", label="sqrt {:5.2f}".format (paramset[3]) if func == sqrtfit else "parabola")
 
     return paramset, paramerrors
 
