@@ -5,18 +5,29 @@ import numpy as np
 from scipy import optimize
 import json
 
-
-_LIMIT_EXPONENT_U=1
+_LIMIT_EXPONENT_U = 0.7
 
 # This describes our model for a focus curve: Seeing and defocus add in quadrature.
 sqrtfit = lambda x, seeing, bestfocus, slope, tweak: (seeing ** 2 + (slope * (x - bestfocus)) ** 2) ** tweak
 polyfit = lambda x, p0, p1, p2: p2 * (x - p1) ** 2 + p0
 
+
 def focus_curve_fit(xdata, ydata, func=sqrtfit, plot=False):
+    """
+    Generic iterative fit with sigma rejection.
+
+    :param xdata:
+    :param ydata:
+    :param func:
+    :param plot:
+    :return:
+    """
+
     # TODO: Verification that we have enough points.
 
-    initial_guess = [2,0,1,0.6] if func == sqrtfit else None
-    bounds = [[0,-3,0,0.5], [5, 3,5,_LIMIT_EXPONENT_U]]  if func == sqrtfit else [-math.inf, math.inf]
+    # TODO: Boundaries and intial guess externally driven by context.
+    initial_guess = [2, 0, 1, 0.6] if func == sqrtfit else None
+    bounds = [[0, -3, 0, 0.5], [5, 3, 5, _LIMIT_EXPONENT_U]] if func == sqrtfit else [-math.inf, math.inf]
 
     for iter in range(2):
         (paramset, istat) = optimize.curve_fit(func, xdata, ydata, p0=initial_guess, bounds=bounds)
@@ -33,7 +44,7 @@ def focus_curve_fit(xdata, ydata, func=sqrtfit, plot=False):
     if plot:
         base = np.arange(-3.6, 3.6, 0.1)
         y = func(base, *paramset)
-        plt.plot(base, y, "--", label="sqrt {:5.2f}".format (paramset[3]) if func == sqrtfit else "parabola")
+        plt.plot(base, y, "--", label="sqrt {:5.2f}".format(paramset[3]) if func == sqrtfit else "parabola")
 
     return paramset, paramerrors
 
@@ -69,6 +80,7 @@ def makeprettyplot():
 def main():
     args = parseCommandLine()
 
+    # TODO: Move plotting into own section
     if args.makepng:
         plt.figure()
         plt.plot(args.focuslist, args.fwhmlist, 'o')
@@ -89,28 +101,30 @@ def main():
             deltafocus) else "Fit failed")
         plt.savefig("{}".format(args.pngname))
 
-    errorstring = None
+    error_string = None
     if not math.isfinite(deltafocus):
-        errorstring = "fit did not converge"
+        error_string = "fit did not converge"
 
     if deltafocus > 0.25:
-        errorstring = "focus fit is too noisy"
+        error_string = "focus fit is too noisy"
 
+    if not (p[3] < _LIMIT_EXPONENT_U):
+        error_string = "Curvature of focus curve is suspicious"
 
-    if (p[3] >0.99):
-        errorstring = "Curvature of focus curve is suspicious"
+    if abs (p[1]) > 2.5:
+        error_string = "Focus offset too large to be credible."
 
-    returnpackage = {'fitok': True if errorstring is None else False,
-                     'fit_seeing': round (p[0],2),
-                     'fit_focus': round (p[1],2),
-                     'fit_slope': round (p[2],2),
-                     'fit_exponent': round(p[3],2),
-                     'fit_rms': round (deltafocus,2),
-                     'errormsg': errorstring}
+    return_package = {'fitok': True if error_string is None else False,
+                      'fit_seeing': round(p[0], 2),
+                      'fit_focus': round(p[1], 2),
+                      'fit_slope': round(p[2], 2),
+                      'fit_exponent': round(p[3], 2),
+                      'fit_rms': round(deltafocus, 2),
+                      'errormsg': error_string}
 
     # TODO: Eventually return json from a web query. So far, we dump to stdout.
-    print(json.dumps(returnpackage))
-    return returnpackage
+    print(json.dumps(return_package))
+    return return_package
 
 
 if __name__ == '__main__':
