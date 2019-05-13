@@ -1,5 +1,4 @@
 import argparse
-
 import math
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,12 +9,14 @@ import json
 sqrtfit = lambda x, seeing, bestfocus, slope, tweak: (seeing ** 2 + (slope * (x - bestfocus)) ** 2) ** tweak
 polyfit = lambda x, p0, p1, p2: p2 * (x - p1) ** 2 + p0
 
-
 def focus_curve_fit(xdata, ydata, func=sqrtfit, plot=False):
     # TODO: Verification that we have enough points.
 
-    for iter in range(3):
-        (paramset, istat) = optimize.curve_fit(func, xdata, ydata)
+    initial_guess = [2,0,1,0.6] if func == sqrtfit else None
+    bounds = [[0,-3,0,0.5], [5, 3,5,1 ]]  if func == sqrtfit else [-math.inf, math.inf]
+
+    for iter in range(2):
+        (paramset, istat) = optimize.curve_fit(func, xdata, ydata, p0=initial_guess, bounds=bounds)
         # sigma rejection and rms estimate:
         fit = func(xdata, *paramset)
         delta = ydata - fit
@@ -48,7 +49,7 @@ def parseCommandLine():
     if (len(args.focuslist) != len(args.fwhmlist)) or (len(args.focuslist) < 4):
         # TODO: For service integration, trickle up error condition.
         print(json.dumps({'fitok': False,
-                          'errormsg': "Invalid input: either the input liskts differ in size or do not have enough entries (minimum is 4:\n{}\n{}".format(
+                          'errormsg': "Invalid input: either the input lists differ in size or do not have enough entries (minimum is 4:\n{}\n{}".format(
                               args.focuslist, args.fwhmlist)}))
         exit(0)
 
@@ -86,10 +87,11 @@ def main():
         plt.savefig("{}".format(args.pngname))
 
     returnpackage = {'fitok': True if math.isfinite(deltafocus) else False,
-                     'fit_seeing': p[0],
-                     'fit_focus': p[1],
-                     'fit_slope': p[2],
-                     'fit_rms': deltafocus}
+                     'fit_seeing': round (p[0],2),
+                     'fit_focus': round (p[1],2),
+                     'fit_slope': round (p[2],2),
+                     'fit_exponent': round(p[3],2),
+                     'fit_rms': round (deltafocus,2)}
 
     # TODO: Eventually return json from a web query. So far, we dump to stdout.
     print(json.dumps(returnpackage))

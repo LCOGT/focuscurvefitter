@@ -39,6 +39,12 @@ testset = [{'focuslist': "-2.0 -1.5 -1.0 -0.5 0.0 0.5 1.0 1.5 2.0",
             'expect_fitok': True,
             'expect_bestfocus': -2},
 
+            # NRES AGU examples
+           {'focuslist': "2.0 1.5 1.0 0.5 0.0 -0.5 -1.0 -1.5",
+            'fwhmlist':  "8.1 7.0 5.1 4.5 4.5  4.5  5.9  7.3",
+            'expect_fitok': True,
+            'expect_bestfocus': -0.0},
+
 
            ]
 
