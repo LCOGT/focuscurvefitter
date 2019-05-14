@@ -109,7 +109,7 @@ def main():
 
     if not math.isfinite(bestfocus_error):
         error_string = "fit did not converge"
-    if bestfocus_error > 0.25:
+    if bestfocus_error > 0.4:
         error_string = "focus fit is too noisy"
     if abs(exponential_p[1]) > 2.5:
         error_string = "Focus offset too large to be credible."
