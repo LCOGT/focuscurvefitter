@@ -87,6 +87,8 @@ def curvaturefit(testset, iter=None):
 def test_curvaturefit():
     iter = 1
     for test in testset:
-        curvaturefit(test, iter)
+        curvaturefit(test, None) # No plot test
+        curvaturefit(test, iter) # with plot test
+
         iter = iter + 1
     assert_expectations()
