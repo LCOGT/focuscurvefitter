@@ -6,6 +6,7 @@ from scipy import optimize
 import json
 
 _LIMIT_EXPONENT_U = 0.7
+_MIN_NUMBER_OF_POINTS = 5
 
 # This describes our model for a focus curve: Seeing and defocus add in quadrature.
 sqrtfit = lambda x, seeing, bestfocus, slope, tweak: (seeing ** 2 + (slope * (x - bestfocus)) ** 2) ** tweak
@@ -57,28 +58,41 @@ def parseCommandLine():
     parser.add_argument('--makepng', action='store_true',
                         help='make a nice plot')
     parser.add_argument("--pngname", default="focusplot.png", help="Name of output plot file")
-
     args = parser.parse_args()
 
-    if (len(args.focuslist) != len(args.fwhmlist)) or (len(args.focuslist) < 4):
-        # TODO: For service integration, trickle up error condition.
-        print(json.dumps({'fitok': False,
-                          'errormsg': "Invalid input: either the input lists differ in size or do not have enough entries (minimum is 4:\n{}\n{}".format(
-                              args.focuslist, args.fwhmlist)}))
-        exit(0)
+    error_string = None
+    if len(args.focuslist) != len(args.fwhmlist):
+        error_string = "Argument error: fwhmlist and focuslist must have the same length"
+    if len(args.focuslist) < 4:
+        error_string =  "Argument error: Not enough data pairs provided, minimum is {}".format(_MIN_NUMBER_OF_POINTS)
 
     args.focuslist = np.asarray(args.focuslist)
     args.fwhmlist = np.asarray(args.fwhmlist)
-    return args
+
+    if (np.isfinite(args.focuslist).sum() != len (args.focuslist))  or (np.isfinite(args.fwhmlist).sum() != len(args.fwhmlist)) :
+        error_string = "Input list are not finite numbers"
+    return args, error_string
 
 
 def makeprettyplot():
     # TODO: Move all the plotting stuff in here
     pass
 
+def errorexit (error_string):
+    '''
+    Short cut emergency exist method
+    '''
+
+    return_package = {'fitok': False,
+                      'errormsg': error_string}
+    print(json.dumps(return_package))
+    exit(0)
 
 def main():
-    args = parseCommandLine()
+    args, error_string = parseCommandLine()
+
+    if error_string is not None:
+        errorexit(error_string)
 
     # TODO: Move plotting into own section
     if args.makepng:
@@ -101,7 +115,7 @@ def main():
             deltafocus) else "Fit failed")
         plt.savefig("{}".format(args.pngname))
 
-    error_string = None
+
     if not math.isfinite(deltafocus):
         error_string = "fit did not converge"
 
@@ -125,6 +139,8 @@ def main():
     # TODO: Eventually return json from a web query. So far, we dump to stdout.
     print(json.dumps(return_package))
     return return_package
+
+
 
 
 if __name__ == '__main__':

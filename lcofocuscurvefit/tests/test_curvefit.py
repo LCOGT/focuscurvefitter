@@ -2,7 +2,8 @@ import subprocess as subp
 import json
 from delayed_assert import expect, assert_expectations
 
-testset = [{'focuslist': "-2.0 -1.5 -1.0 -0.5 0.0 0.5 1.0 1.5 2.0",
+testset = [
+           {'focuslist': "-2.0 -1.5 -1.0 -0.5 0.0 0.5 1.0 1.5 2.0",
             'fwhmlist': "3.6 3.57 3.74 4.21 5.34 5.89 7.1 8.26 9.46",
             'expect_fitok': True,
             'expect_bestfocus': -1.6},
@@ -52,7 +53,18 @@ testset = [{'focuslist': "-2.0 -1.5 -1.0 -0.5 0.0 0.5 1.0 1.5 2.0",
             'expect_fitok': True,
             'expect_bestfocus': -0.0},
 
-           ]
+            # A few bad input tests
+    {'focuslist': "-2.0 -1.5 -0.5 0.0 0.5 1.0 1.5 2.0",
+     'fwhmlist': "3.6 3.57 3.74 4.21 5.34 5.89 7.1 8.26 9.46",
+     'expect_fitok': False,
+     'expect_bestfocus': -1.6},
+
+    {'focuslist': "-2.0 -1.5 nan 0.0 0.5 inf 1.5 2.0",
+     'fwhmlist': "3.6 3.57 3.74 0 5.89 7.1 8.26 9.46",
+     'expect_fitok': False,
+     'expect_bestfocus': -1.6},
+
+]
 
 
 def curvaturefit(testset, iter=None):
