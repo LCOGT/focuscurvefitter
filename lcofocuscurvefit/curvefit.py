@@ -122,9 +122,6 @@ def main():
     if deltafocus > 0.25:
         error_string = "focus fit is too noisy"
 
-    if not (p[3] < _LIMIT_EXPONENT_U):
-        error_string = "Curvature of focus curve is suspicious"
-
     if abs (p[1]) > 2.5:
         error_string = "Focus offset too large to be credible."
 
