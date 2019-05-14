@@ -13,7 +13,7 @@ sqrtfit = lambda x, seeing, bestfocus, slope, tweak: (seeing ** 2 + (slope * (x 
 polyfit = lambda x, p0, p1, p2: p2 * (x - p1) ** 2 + p0
 
 
-def focus_curve_fit(xdata, ydata, func=sqrtfit, plot=False):
+def focus_curve_fit(xdata, ydata, func=sqrtfit):
     """
     Generic iterative fit with sigma rejection.
 
@@ -42,12 +42,13 @@ def focus_curve_fit(xdata, ydata, func=sqrtfit, plot=False):
 
     paramerrors = np.sqrt(np.diag(istat))
 
-    if plot:
-        base = np.arange(-3.6, 3.6, 0.1)
-        y = func(base, *paramset)
-        plt.plot(base, y, "--", label="sqrt {:5.2f}".format(paramset[3]) if func == sqrtfit else "parabola")
-
     return paramset, paramerrors
+
+
+def overplot_fit(func, paramset):
+    base = np.arange(-3.6, 3.6, 0.1)
+    y = func(base, *paramset)
+    plt.plot(base, y, "--", label="sqrt {:5.2f}".format(paramset[3]) if func == sqrtfit else "parabola")
 
 
 def parseCommandLine():
@@ -64,12 +65,13 @@ def parseCommandLine():
     if len(args.focuslist) != len(args.fwhmlist):
         error_string = "Argument error: fwhmlist and focuslist must have the same length"
     if len(args.focuslist) < 4:
-        error_string =  "Argument error: Not enough data pairs provided, minimum is {}".format(_MIN_NUMBER_OF_POINTS)
+        error_string = "Argument error: Not enough data pairs provided, minimum is {}".format(_MIN_NUMBER_OF_POINTS)
 
     args.focuslist = np.asarray(args.focuslist)
     args.fwhmlist = np.asarray(args.fwhmlist)
 
-    if (np.isfinite(args.focuslist).sum() != len (args.focuslist))  or (np.isfinite(args.fwhmlist).sum() != len(args.fwhmlist)) :
+    if (np.isfinite(args.focuslist).sum() != len(args.focuslist)) or (
+            np.isfinite(args.fwhmlist).sum() != len(args.fwhmlist)):
         error_string = "Input list are not finite numbers"
     return args, error_string
 
@@ -78,7 +80,8 @@ def makeprettyplot():
     # TODO: Move all the plotting stuff in here
     pass
 
-def errorexit (error_string):
+
+def errorexit(error_string):
     '''
     Short cut emergency exist method
     '''
@@ -88,56 +91,55 @@ def errorexit (error_string):
     print(json.dumps(return_package))
     exit(0)
 
+
 def main():
     args, error_string = parseCommandLine()
 
     if error_string is not None:
         errorexit(error_string)
 
-    # TODO: Move plotting into own section
-    if args.makepng:
-        plt.figure()
-        plt.plot(args.focuslist, args.fwhmlist, 'o')
-        plt.xlabel("FOCUS Demand [mm foc plane]")
-        plt.ylabel("FWHM (Pixels")
-        plt.xlim([-3.6, 3.6])
-        plt.ylim([0, 30])
+    parabola_p, parabola_e = focus_curve_fit(args.focuslist, args.fwhmlist, polyfit)
+    exponential_p, exponential_rms = focus_curve_fit(args.focuslist, args.fwhmlist, sqrtfit)
 
-    focus_curve_fit(args.focuslist, args.fwhmlist, polyfit, plot=args.makepng)
-    p, rms = focus_curve_fit(args.focuslist, args.fwhmlist, sqrtfit, plot=args.makepng)
-
-    deltafocus = rms[1]
-    if args.makepng:
-        if math.isfinite(deltafocus):
-            plt.axvline(x=p[1], label="best focus sqrt")
-        plt.legend()
-        plt.title("Sqrt best focus found at {:5.2f} +/- {:5.2f}".format(p[1], deltafocus) if math.isfinite(
-            deltafocus) else "Fit failed")
-        plt.savefig("{}".format(args.pngname))
-
+    deltafocus = exponential_rms[1]
 
     if not math.isfinite(deltafocus):
         error_string = "fit did not converge"
-
     if deltafocus > 0.25:
         error_string = "focus fit is too noisy"
-
-    if abs (p[1]) > 2.5:
+    if abs(exponential_p[1]) > 2.5:
         error_string = "Focus offset too large to be credible."
 
     return_package = {'fitok': True if error_string is None else False,
-                      'fit_seeing': round(p[0], 2),
-                      'fit_focus': round(p[1], 2),
-                      'fit_slope': round(p[2], 2),
-                      'fit_exponent': round(p[3], 2),
+                      'fit_seeing': round(exponential_p[0], 2),
+                      'fit_focus': round(exponential_p[1], 2),
+                      'fit_slope': round(exponential_p[2], 2),
+                      'fit_exponent': round(exponential_p[3], 2),
                       'fit_rms': round(deltafocus, 2),
                       'errormsg': error_string}
 
     # TODO: Eventually return json from a web query. So far, we dump to stdout.
     print(json.dumps(return_package))
+
+    if args.makepng:
+        plt.figure()
+        if math.isfinite(deltafocus):
+            plt.axvline(x=exponential_p[1], label="best focus sqrt")
+            plt.axes().axvspan(exponential_p[1] - deltafocus, exponential_p[1] + deltafocus, alpha=0.1, color='grey')
+        plt.plot(args.focuslist, args.fwhmlist, 'o')
+        plt.xlabel("FOCUS Demand [mm foc plane]")
+        plt.ylabel("FWHM (Pixels")
+        plt.xlim([-3.6, 3.6])
+        plt.ylim([0, 30])
+        overplot_fit(polyfit, parabola_p)
+        overplot_fit(sqrtfit, exponential_p)
+        plt.legend()
+        plt.title("Sqrt best focus found at {:5.2f} +/- {:5.2f}".format(exponential_p[1], deltafocus) if math.isfinite(
+            deltafocus) else "Fit failed")
+        plt.savefig("{}".format(args.pngname))
+
+
     return return_package
-
-
 
 
 if __name__ == '__main__':
